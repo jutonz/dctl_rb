@@ -28,7 +28,18 @@ where `project` is the name of your current app (e.g. `dctl` for this repo) and 
 
 5. Inside each of those folders, create a `docker-compose.yaml` file which details how your containers relate.
 
-Your `docker` directory might look something like this:
+A simple compose file might look like this:
+
+```yaml
+version: "3"
+services:
+  app:
+    image: jutonz/dctl-dev-app:1
+    volumes:
+      - ../../:/root
+```
+
+6. Done! Your `docker` directory will probably look similar:
 
 ```
 docker
