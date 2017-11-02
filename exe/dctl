@@ -12,6 +12,7 @@ module Dctl
 
     desc "build", "Build images. Pass image name to build a specific one; otherwise builds all"
     def build(*images)
+      load_config!
       images = versions.keys if images.empty?
       images = Array(images)
       env    = options[:env]
@@ -32,6 +33,7 @@ module Dctl
 
     desc "push", "Upload locally built images to the remote store"
     def push(*images)
+      load_config!
       images = versions.keys if images.empty?
       images = Array(images)
       env    = options[:env]
@@ -53,6 +55,7 @@ module Dctl
 
     desc "pull", "Pull the latest remote images to your local machine"
     def pull(*images)
+      load_config!
       images = versions.keys if images.empty?
       images = Array(images)
       env    = options[:env]
@@ -72,7 +75,6 @@ module Dctl
     def up
       load_config!
 
-      require 'byebug'; byebug;
       pidfile = "tmp/pids/server.pid"
       FileUtils.rm pidfile if File.exist? pidfile
 
@@ -82,16 +84,19 @@ module Dctl
 
     desc "down", "Stop your dockerized app server"
     def down
+      load_config!
       stream_output "#{sudo}docker-compose -f #{compose_file_path} down", exec: true
     end
 
     desc "rm", "Remove any stuck containers."
     def rm
+      load_config!
       stream_output "#{sudo}docker-compose -f #{compose_file_path} rm", exec: true
     end
 
     desc "initdb", "Setup initial postgres database"
     def initdb
+      load_config!
       env = options[:env]
       local_data_dir = File.expand_path "../tmp/psql-#{env}", __FILE__
       `#{sudo}rm -r #{local_data_dir}` if File.exists? local_data_dir # todo prompt
@@ -115,6 +120,7 @@ module Dctl
 
     desc "bash CONTAINER", "Create a new instance of the given image with a bash prompt"
     def bash(container = "app")
+      load_config!
       cmd = "#{sudo}docker-compose -f #{compose_file_path} run --rm #{container} /bin/bash"
 
       stream_output cmd, exec: true
@@ -122,12 +128,14 @@ module Dctl
 
     desc "connect CONTAINER", "Connect to a running container."
     def connect(image = "app")
+      load_config!
       stream_output "#{sudo}docker-compose -f #{compose_file_path} exec #{image} /bin/bash", exec: true
     end
 
     desc "attach CONTAINER", "Connect to a running container."
     option :env, type: :string, default: "dev"
     def attach(image = "app")
+      load_config!
       env     = options[:env]
       version = versions[image]
       image   = "#{Settings.org}/#{Settings.project}-#{env}-#{image}:#{version}"
@@ -208,6 +216,21 @@ module Dctl
         end
 
         opts
+      end
+
+      def versions(env: options[:env])
+        @versions ||= begin
+          compose_file = compose_file_path env: env
+          parsed = YAML.load_file compose_file
+          images = parsed["services"].keys
+          version_map = {}
+
+          images.each do |image|
+            version_map[image] = parsed["services"][image]["image"].split(":").last
+          end
+
+          version_map
+        end
       end
 
       def compose_file_path(env: options[:env])

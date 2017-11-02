@@ -71,6 +71,28 @@ The default environment is `dev`, but you can override this with `--env prod` et
 * `dctl push`
 * `dctl pull`
 
+
+### Targeting specific containers
+
+Most commands also allow you to specify a specific image to target (defaulting to all images in your compose file)
+
+* `dctl build app`
+  * Just build your app container
+* `dctl push psql`
+  * Just push psql
+
+### Nonstandard commands
+
+There are also some non-compose commands to make your life easier
+
+* `dctl connect app`
+  * Start a new shell in a running `app` container
+* `dctl attach app`
+  * Attach your current TTY to that of the running `app` container.
+  * This is useful if you've put a debugger or something similar and need to talk directly to a running container's current shell (docker-compose eats stdin/stdout/stderr so normally this isn't possible)
+* `dctl bash app`
+  * Spin up a new `app` image and drop you in a shell
+
 ## Config
 
 ### Required keys
