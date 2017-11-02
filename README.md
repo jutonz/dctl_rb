@@ -7,6 +7,42 @@ By using a standardized directory structure across your apps, you can:
 2. Not reinvent the wheel for every new app
 3. Let other people handle the annoying parts of docker-compose for you.
 
+## Usage
+
+Mostly use the same way you would use `docker-compose`, but without specifying a path to the `docker-compose.yaml` file.
+
+Each command relies on information in the `docker-compose.yaml` for the given environment to determine things like tag versions.
+
+The default environment is `dev`, but you can override this with `--env prod` etc
+
+* `dctl up`
+* `dctl down`
+* `dctl build`
+* `dctl push`
+* `dctl pull`
+
+
+### Targeting specific containers
+
+Most commands also allow you to specify a specific image to target (defaulting to all images in your compose file)
+
+* `dctl build app`
+  * Just build your app container
+* `dctl push psql`
+  * Just push psql
+
+### Nonstandard commands
+
+There are also some non-compose commands to make your life easier
+
+* `dctl connect app`
+  * Start a new shell in a running `app` container
+* `dctl attach app`
+  * Attach your current TTY to that of the running `app` container.
+  * This is useful if you've put a debugger or something similar and need to talk directly to a running container's current shell (docker-compose eats stdin/stdout/stderr so normally this isn't possible)
+* `dctl bash app`
+  * Spin up a new `app` image and drop you in a shell
+
 ## Installation
 
 If using a Gemfile, add `gem 'dctl_rb'` and execute `bundle`. Otherwise just run `gem install dctl_rb`.
@@ -67,42 +103,6 @@ docker
         ├── backup.sh
         └── initdb.sh
 ```
-
-## Usage
-
-Mostly use the same way you would use `docker-compose`, but without specifying a path to the `docker-compose.yaml` file.
-
-Each command relies on information in the `docker-compose.yaml` for the given environment to determine things like tag versions.
-
-The default environment is `dev`, but you can override this with `--env prod` etc
-
-* `dctl up`
-* `dctl down`
-* `dctl build`
-* `dctl push`
-* `dctl pull`
-
-
-### Targeting specific containers
-
-Most commands also allow you to specify a specific image to target (defaulting to all images in your compose file)
-
-* `dctl build app`
-  * Just build your app container
-* `dctl push psql`
-  * Just push psql
-
-### Nonstandard commands
-
-There are also some non-compose commands to make your life easier
-
-* `dctl connect app`
-  * Start a new shell in a running `app` container
-* `dctl attach app`
-  * Attach your current TTY to that of the running `app` container.
-  * This is useful if you've put a debugger or something similar and need to talk directly to a running container's current shell (docker-compose eats stdin/stdout/stderr so normally this isn't possible)
-* `dctl bash app`
-  * Spin up a new `app` image and drop you in a shell
 
 ## Config
 
