@@ -82,16 +82,18 @@ module Dctl
       stream_output "#{sudo}docker-compose -f #{compose_file_path} up #{compose_opts.join(" ")}", exec: true
     end
 
-    desc "down", "Stop your dockerized app server"
-    def down
+    desc "down", "Stop one or many containers"
+    def down(*args)
       load_config!
-      stream_output "#{sudo}docker-compose -f #{compose_file_path} down", exec: true
+      stream_output "#{sudo}docker-compose -f #{compose_file_path} down #{args.join(" ")}", exec: true
     end
 
-    desc "rm", "Remove any stuck containers."
-    def rm
+    desc "rm", "Remove one or many containers"
+    option :force, type: :boolean, default: false, aliases: %w(f)
+    def rm(*args)
       load_config!
-      stream_output "#{sudo}docker-compose -f #{compose_file_path} rm", exec: true
+      opts = " --force" if options[:force]
+      stream_output "#{sudo}docker-compose -f #{compose_file_path} rm#{opts} #{args.join(" ")}", exec: true
     end
 
     desc "start", "Start one or many containers"
@@ -111,6 +113,19 @@ module Dctl
       load_config!
       stream_output "#{sudo}docker-compose -f #{compose_file_path} restart #{args.join(" ")}", exec: true
     end
+
+    desc "create", "Create one or many containers"
+    def create(*args)
+      load_config!
+      stream_output "#{sudo}docker-compose -f #{compose_file_path} create #{args.join(" ")}", exec: true
+    end
+
+    desc "ps", "List running containers for this environment"
+    def ps
+      load_config!
+      stream_output "#{sudo}docker-compose -f #{compose_file_path} ps", exec: true
+    end
+
     desc "initdb", "Setup initial postgres database"
     def initdb
       load_config!
