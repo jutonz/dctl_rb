@@ -94,6 +94,23 @@ module Dctl
       stream_output "#{sudo}docker-compose -f #{compose_file_path} rm", exec: true
     end
 
+    desc "start", "Start one or many containers"
+    def start(*args)
+      load_config!
+      stream_output "#{sudo}docker-compose -f #{compose_file_path} start #{args.join(" ")}", exec: true
+    end
+
+    desc "stop", "Stop one or many containers"
+    def stop(*args)
+      load_config!
+      stream_output "#{sudo}docker-compose -f #{compose_file_path} stop #{args.join(" ")}", exec: true
+    end
+
+    desc "restart", "Restart one or many containers"
+    def restart(*args)
+      load_config!
+      stream_output "#{sudo}docker-compose -f #{compose_file_path} restart #{args.join(" ")}", exec: true
+    end
     desc "initdb", "Setup initial postgres database"
     def initdb
       load_config!
