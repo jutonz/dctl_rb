@@ -21,7 +21,10 @@ The default environment is `dev`, but you can override this with `--env prod` et
 * `dctl build`
 * `dctl push`
 * `dctl pull`
-
+* `dctl create`
+* `dctl rm`
+* `dctl restart`
+* `dctl ps`
 
 ### Targeting specific containers
 
@@ -36,17 +39,21 @@ Most commands also allow you to specify a specific image to target (defaulting t
 
 There are also some non-compose commands to make your life easier
 
-* `dctl connect app`
-  * Start a new shell in a running `app` container.
-* `dctl attach app`
-  * Attach your current TTY to that of the running `app` container.
+* `dctl connect [image]`
+  * Start a new shell in a running container.
+  * For instance, use `dctl connect app` to open a shell in your running `app` container.
+* `dctl attach [image]`
+  * Attach your current TTY to that of a running container.
   * This is useful if you've put a debugger or something similar and need to talk directly to a running container's current shell (docker-compose eats stdin/stdout/stderr so normally this isn't possible)
-* `dctl bash app`
-  * Spin up a new `app` image and drop you in a shell.
-* `dctl recreate app`
+* `dctl bash [image]`
+  * Spin up a new container using the given image and drop you in a shell.
+  * While `connect` (above) creates a shell in a container which is already running, `bash` creates an entirely new container (and also does not require your stack to already be up).
+* `dctl recreate [image]`
   * Stops, removes, builds, creates, and starts an image.
   * Useful if you've made a change to one container but don't want to restart your entire stack to have it reflected.
-  * Specify `--build false` (or `-b false`) if you don't want the image to be rebuilt.
+  * Options:
+    * `--build` (`-b`) (default `true`)
+      * Whether or not the image in question should be rebuilt before bringing it back up.
 * `dctl cleanup`
   * Useful for policing the large numbers of built-but-unused containers which tend to accumulate when using docker.
   * Removes local images without tags and which are not referenced by other images.
