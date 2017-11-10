@@ -1,3 +1,3 @@
 module Dctl
-  VERSION = "0.2.0.pre"
+  VERSION = "0.3.0"
 end
