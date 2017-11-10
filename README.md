@@ -5,7 +5,7 @@ Choosing how to organize your application's containers across multiple environme
 By using a standardized directory structure across your apps, you can:
 1. Easily onboard new developers
 2. Not reinvent the wheel for every new app
-3. Let other people handle the annoying parts of docker-compose for you.
+3. Let other people handle the annoying parts of docker-compose for you
 
 ## Usage
 
@@ -13,7 +13,8 @@ Mostly use the same way you would use `docker-compose`, but without specifying a
 
 Each command relies on information in the `docker-compose.yaml` for the given environment to determine things like tag versions.
 
-The default environment is `dev`, but you can override this with `--env prod` etc
+The default environment is `dev`, but you can override this with `--env prod` etc.
+  * This just tells dctl where to look for your compose file--it doesn't actually do anything different. See [Installation](#Installation) for more info.
 
 * `dctl up`
 * `dctl down`
@@ -36,12 +37,19 @@ Most commands also allow you to specify a specific image to target (defaulting t
 There are also some non-compose commands to make your life easier
 
 * `dctl connect app`
-  * Start a new shell in a running `app` container
+  * Start a new shell in a running `app` container.
 * `dctl attach app`
   * Attach your current TTY to that of the running `app` container.
   * This is useful if you've put a debugger or something similar and need to talk directly to a running container's current shell (docker-compose eats stdin/stdout/stderr so normally this isn't possible)
 * `dctl bash app`
-  * Spin up a new `app` image and drop you in a shell
+  * Spin up a new `app` image and drop you in a shell.
+* `dctl recreate app`
+  * Stops, removes, builds, creates, and starts an image.
+  * Useful if you've made a change to one container but don't want to restart your entire stack to have it reflected.
+  * Specify `--build false` (or `-b false`) if you don't want the image to be rebuilt.
+* `dctl cleanup`
+  * Useful for policing the large numbers of built-but-unused containers which tend to accumulate when using docker.
+  * Removes local images without tags and which are not referenced by other images.
 
 ## Installation
 
