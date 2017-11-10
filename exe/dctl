@@ -238,7 +238,7 @@ module Dctl
           unless Settings.send key
             error = "Config is missing required key '#{key}'. Please add it " \
               "to #{config_path} and try again."
-            error += "\n\nFor more info, see https://github.com/jutonz/dctl#required-keys"
+            error += "\n\nFor more info, see https://github.com/jutonz/dctl_rb#required-keys"
             puts Rainbow(error).red
             exit 1
           end
