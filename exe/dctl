@@ -120,6 +120,17 @@ module Dctl
       stream_output "#{sudo}docker-compose -f #{compose_file_path} create #{args.join(" ")}", exec: true
     end
 
+    desc "recreate", "Stop, remove, build, create, and start a container"
+    option :build, type: :boolean, default: true, aliases: %w(b)
+    def recreate(container)
+      operations = ["stop", "rm -f", "build", "create", "start"]
+
+      operations.delete("build") unless options[:build]
+
+      commands = operations.map { |op| "dctl #{op} #{container}" }
+      stream_output "#{commands.join(" && ")}", exec: true
+    end
+
     desc "ps", "List running containers for this environment"
     def ps
       load_config!
