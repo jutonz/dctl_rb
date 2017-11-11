@@ -12,18 +12,16 @@ module Dctl
 
     desc "build", "Build images. Pass image name to build a specific one; otherwise builds all"
     def build(*images)
-      load_config!
-      images = versions.keys if images.empty?
-      images = Array(images)
+      dctl   = Dctl::Main.new env: options[:env]
+      images = dctl.expand_images *images
       env    = options[:env]
 
       puts "Generating build script for #{images.join(", ")}"
       commands = []
 
       images.each do |image|
-        version    = versions[image]
-        tag        = "#{Settings.org}/#{Settings.project}-#{env}-#{image}:#{version}"
-        dockerfile = "docker/#{env}/#{image}/Dockerfile"
+        tag = dctl.image_tag(image)
+        dockerfile = dctl.image_dockerfile(image)
 
         commands << "#{sudo}docker #{docker_opts} build -f #{dockerfile} -t #{tag} ."
       end
@@ -33,20 +31,13 @@ module Dctl
 
     desc "push", "Upload locally built images to the remote store"
     def push(*images)
-      load_config!
-      images = versions.keys if images.empty?
-      images = Array(images)
-      env    = options[:env]
-
+      dctl   = Dctl::Main.new env: options[:env]
+      images = dctl.expand_images *images
       push_cmds = []
 
       images.each do |image|
-        version = versions[image]
-        tag_cmd = "#{sudo}docker tag #{Settings.org}/#{Settings.project}-#{env}-#{image}:#{version} #{Settings.org}/#{Settings.project}-#{env}-#{image}:latest"
-        puts tag_cmd
-        `#{tag_cmd}`
-
-        push_cmds << "#{sudo}docker push #{Settings.org}/#{Settings.project}-#{env}-#{image}:#{version}"
+        tag = dctl.image_tag(image)
+        push_cmds << "#{sudo}docker push #{tag}"
       end
 
       push_cmd = push_cmds.join " && "
@@ -55,16 +46,13 @@ module Dctl
 
     desc "pull", "Pull the latest remote images to your local machine"
     def pull(*images)
-      load_config!
-      images = versions.keys if images.empty?
-      images = Array(images)
-      env    = options[:env]
-
+      dctl   = Dctl::Main.new env: options[:env]
+      images = dctl.expand_images *images
       pull_cmds = []
 
       images.each do |image|
-        version = versions[image]
-        pull_cmds << "#{sudo}docker pull #{Settings.org}/#{Settings.project}-#{env}-#{image}:#{version}"
+        tag = dctl.image_tag(image)
+        pull_cmds << "#{sudo}docker pull #{tag}"
       end
 
       pull_cmd = pull_cmds.join " && "
@@ -73,51 +61,51 @@ module Dctl
 
     desc "up", "Start your dockerized app server"
     def up
-      load_config!
+      dctl = Dctl::Main.new env: options[:env]
 
       pidfile = "tmp/pids/server.pid"
       FileUtils.rm pidfile if File.exist? pidfile
 
       compose_opts = %w(--remove-orphans)
-      stream_output "#{sudo}docker-compose -f #{compose_file_path} up #{compose_opts.join(" ")}", exec: true
+      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} up #{compose_opts.join(" ")}", exec: true
     end
 
     desc "down", "Stop one or many containers"
-    def down(*args)
-      load_config!
-      stream_output "#{sudo}docker-compose -f #{compose_file_path} down #{args.join(" ")}", exec: true
+    def down(*images)
+      dctl = Dctl::Main.new env: options[:env]
+      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} down #{images.join(" ")}", exec: true
     end
 
     desc "rm", "Remove one or many containers"
     option :force, type: :boolean, default: false, aliases: %w(f)
-    def rm(*args)
-      load_config!
+    def rm(*images)
+      dctl = Dctl::Main.new env: options[:env]
       opts = " --force" if options[:force]
-      stream_output "#{sudo}docker-compose -f #{compose_file_path} rm#{opts} #{args.join(" ")}", exec: true
+      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} rm#{opts} #{images.join(" ")}", exec: true
     end
 
     desc "start", "Start one or many containers"
-    def start(*args)
-      load_config!
-      stream_output "#{sudo}docker-compose -f #{compose_file_path} start #{args.join(" ")}", exec: true
+    def start(*images)
+      dctl = Dctl::Main.new env: options[:env]
+      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} start #{images.join(" ")}", exec: true
     end
 
     desc "stop", "Stop one or many containers"
-    def stop(*args)
-      load_config!
-      stream_output "#{sudo}docker-compose -f #{compose_file_path} stop #{args.join(" ")}", exec: true
+    def stop(*images)
+      dctl = Dctl::Main.new env: options[:env]
+      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} stop #{images.join(" ")}", exec: true
     end
 
     desc "restart", "Restart one or many containers"
-    def restart(*args)
-      load_config!
-      stream_output "#{sudo}docker-compose -f #{compose_file_path} restart #{args.join(" ")}", exec: true
+    def restart(*images)
+      dctl = Dctl::Main.new env: options[:env]
+      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} restart #{images.join(" ")}", exec: true
     end
 
     desc "create", "Create one or many containers"
-    def create(*args)
-      load_config!
-      stream_output "#{sudo}docker-compose -f #{compose_file_path} create #{args.join(" ")}", exec: true
+    def create(*images)
+      dctl = Dctl::Main.new env: options[:env]
+      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} create #{images.join(" ")}", exec: true
     end
 
     desc "recreate", "Stop, remove, build, create, and start a container"
@@ -133,18 +121,18 @@ module Dctl
 
     desc "ps", "List running containers for this environment"
     def ps
-      load_config!
-      stream_output "#{sudo}docker-compose -f #{compose_file_path} ps", exec: true
+      dctl = Dctl::Main.new env: options[:env]
+      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} ps", exec: true
     end
 
     desc "initdb", "Setup initial postgres database"
     def initdb
-      load_config!
+      dctl = Dctl::Main.new env: options[:env]
       env = options[:env]
       local_data_dir = File.expand_path "../tmp/psql-#{env}", __FILE__
       `#{sudo}rm -r #{local_data_dir}` if File.exists? local_data_dir # todo prompt
 
-      cmd = "#{sudo}docker-compose -f #{compose_file_path} run --rm psql /bin/bash -c /etc/initdb.sh"
+      cmd = "#{sudo}docker-compose -f #{dtcl.compose_file_path} run --rm psql /bin/bash -c /etc/initdb.sh"
 
       stream_output cmd, exec: true
     end
@@ -163,25 +151,23 @@ module Dctl
 
     desc "bash CONTAINER", "Create a new instance of the given image with a bash prompt"
     def bash(container = "app")
-      load_config!
-      cmd = "#{sudo}docker-compose -f #{compose_file_path} run --rm #{container} /bin/bash"
+      dctl = Dctl::Main.new env: options[:env]
+      cmd = "#{sudo}docker-compose -f #{dctl.compose_file_path} run --rm #{container} /bin/bash"
 
       stream_output cmd, exec: true
     end
 
     desc "connect CONTAINER", "Connect to a running container."
     def connect(image = "app")
-      load_config!
-      stream_output "#{sudo}docker-compose -f #{compose_file_path} exec #{image} /bin/bash", exec: true
+      dctl = Dctl::Main.new env: options[:env]
+      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} exec #{image} /bin/bash", exec: true
     end
 
     desc "attach CONTAINER", "Connect to a running container."
     option :env, type: :string, default: "dev"
     def attach(image = "app")
-      load_config!
-      env     = options[:env]
-      version = versions[image]
-      image   = "#{Settings.org}/#{Settings.project}-#{env}-#{image}:#{version}"
+      dctl = Dctl::Main.new env: options[:env]
+      tag = dctl.image_tag(image)
 
       cmd = "#{sudo}docker ps --filter ancestor=#{image} -aq | head -n1"
       puts cmd
@@ -216,39 +202,6 @@ module Dctl
         `uname`.chomp == "Darwin" ? "" : "sudo " # use sudo on linux hosts
       end
 
-      def config_path
-        path = File.expand_path ".dctl.yaml", Dir.pwd
-
-        unless File.exist? path
-          error = "Could not find config file at #{path}"
-          puts Rainbow(error).red
-          exit 1
-        end
-
-        path
-      end
-
-      def check_settings!
-        required_keys = %w(
-          org
-          project
-        )
-
-        required_keys.each do |key|
-          unless Settings.send key
-            error = "Config is missing required key '#{key}'. Please add it " \
-              "to #{config_path} and try again."
-            error += "\n\nFor more info, see https://github.com/jutonz/dctl_rb#required-keys"
-            puts Rainbow(error).red
-            exit 1
-          end
-        end
-      end
-
-      def load_config!
-        Config.load_and_set_settings(config_path)
-        check_settings!
-      end
 
       def docker_opts
         return "" unless ENV["JENKINS"]
@@ -259,33 +212,6 @@ module Dctl
         end
 
         opts
-      end
-
-      def versions(env: options[:env])
-        @versions ||= begin
-          compose_file = compose_file_path env: env
-          parsed = YAML.load_file compose_file
-          images = parsed["services"].keys
-          version_map = {}
-
-          images.each do |image|
-            version_map[image] = parsed["services"][image]["image"].split(":").last
-          end
-
-          version_map
-        end
-      end
-
-      def compose_file_path(env: options[:env])
-        path = File.expand_path "docker/#{env}/docker-compose.yml"
-
-        unless File.exist? path
-          err = "There is no docker compose file for env #{env} (I expected to find it at #{path})"
-          puts Rainbow(err).red
-          exit 1
-        end
-
-        path
       end
     end
   end
