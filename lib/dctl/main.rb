@@ -16,7 +16,7 @@ module Dctl
     def image_tag(image)
       org       = settings.org
       project   = settings.project
-      version   = versions[image]
+      version   = versions[image] || 1
 
       "#{org}/#{project}-#{env}-#{image}:#{version}"
     end
@@ -37,6 +37,10 @@ module Dctl
     def expand_images(*images)
       images = versions.keys if images.empty?
       images = Array(images)
+
+      images.each { |i| check_image_name(i) }
+
+      images
     end
 
     ##
@@ -51,6 +55,48 @@ module Dctl
       end
 
       path
+    end
+
+    ##
+    # Confirms that there is an entry for the given image in the compose file
+    # for this environment, and that the image tag within is formatted as we
+    # expect it to be.
+    #
+    # Prints a warning if the tag has the wrong name, but errors out if the
+    # service tag is not present
+    #
+    # Expected names look like org/project-env-image:version
+    def check_image_name(image)
+      tag = image_tag(image)
+
+      # Check that a service exists for the image
+      service = parsed_compose_file.dig "services", image
+      unless service
+        error = "The service \"#{image}\" is not present in the compose " \
+          "file for this environment. Please add a service entry for " \
+          "#{image} to #{compose_file_path}\n"
+        puts Rainbow(error).fg :red
+
+        puts <<~EOL
+          It might look something like this:
+
+          version: '3'
+          services:
+            #{image}:
+              image: #{image_tag(image)}
+        EOL
+        exit 1
+      end
+
+      # Check that the image has the correct tag
+      expected_tag = image_tag(image)
+      actual_tag = service["image"]
+      if actual_tag != expected_tag
+        warning = "Expected the tag for the image \"#{image}\" to be " \
+          "\"#{expected_tag}\", but it was \"#{actual_tag}\". While not " \
+          "critical, this can cause issues with some commands."
+        puts Rainbow(warning).fg :orange
+      end
     end
 
     def versions
