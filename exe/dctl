@@ -125,6 +125,12 @@ module Dctl
       stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} ps", exec: true
     end
 
+    desc "release IMAGE", "Increase the version number for the given image"
+    def release(image)
+      dctl = Dctl::Main.new env: options[:env]
+      dctl.release(image)
+    end
+
     desc "initdb", "Setup initial postgres database"
     def initdb
       dctl = Dctl::Main.new env: options[:env]

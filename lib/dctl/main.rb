@@ -13,10 +13,9 @@ module Dctl
     #
     # @example
     #   image_tag("app") # => jutonz/dctl-dev-app:1
-    def image_tag(image)
+    def image_tag(image, version: versions[image])
       org       = settings.org
       project   = settings.project
-      version   = versions[image] || 1
 
       "#{org}/#{project}-#{env}-#{image}:#{version}"
     end
@@ -38,9 +37,34 @@ module Dctl
       images = versions.keys if images.empty?
       images = Array(images)
 
-      images.each { |i| check_image_name(i) }
+      images.each { |image| check_image(image) }
 
       images
+    end
+
+    def release(image)
+      check_image(image)
+
+      parsed  = parsed_compose_file
+      service = parsed.dig "services", image
+      old_tag = service["image"]
+      puts "Found existing image #{old_tag}"
+
+      version = versions[image].to_i
+      new_tag = image_tag image, version: version + 1
+      puts "New tag will be #{new_tag}"
+
+      service["image"] = new_tag
+
+      print "Updating..."
+      File.write(compose_file_path, parsed.to_yaml)
+      puts "done"
+
+      # Cache bust
+      @parsed_compose_file = nil
+      @versions = nil
+
+      puts Rainbow("#{image} is now at version #{version + 1}").fg :green
     end
 
     ##
@@ -66,7 +90,7 @@ module Dctl
     # service tag is not present
     #
     # Expected names look like org/project-env-image:version
-    def check_image_name(image)
+    def check_image(image)
       tag = image_tag(image)
 
       # Check that a service exists for the image
