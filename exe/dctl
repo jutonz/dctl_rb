@@ -108,6 +108,12 @@ module Dctl
       stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} create #{images.join(" ")}", exec: true
     end
 
+    desc "run [IMAGE] [COMMAND]", "Run a command on the given image"
+    def runcmd(image, *commands)
+      dctl = Dctl::Main.new env: options[:env]
+      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} run #{image} #{commands.join(" ")}", exec: true
+    end
+
     desc "recreate", "Stop, remove, build, create, and start a container"
     option :build, type: :boolean, default: true, aliases: %w(b)
     def recreate(container)
