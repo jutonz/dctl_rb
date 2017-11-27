@@ -144,7 +144,7 @@ module Dctl
       local_data_dir = File.expand_path "../tmp/psql-#{env}", __FILE__
       `#{sudo}rm -r #{local_data_dir}` if File.exists? local_data_dir # todo prompt
 
-      cmd = "#{sudo}docker-compose -f #{dtcl.compose_file_path} run --rm psql /bin/bash -c /etc/initdb.sh"
+      cmd = "#{sudo}docker-compose -f #{dctl.compose_file_path} run --rm psql /bin/bash -c /etc/initdb.sh"
 
       stream_output cmd, exec: true
     end
