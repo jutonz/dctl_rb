@@ -102,10 +102,10 @@ module Dctl
       stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} restart #{images.join(" ")}", exec: true
     end
 
-    desc "create", "Create one or many containers"
+    desc "create", "Bring an image up without starting it"
     def create(*images)
       dctl = Dctl::Main.new env: options[:env]
-      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} create #{images.join(" ")}", exec: true
+      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} up --no-start #{images.join(" ")}", exec: true
     end
 
     desc "run [IMAGE] [COMMAND]", "Run a command on the given image"
