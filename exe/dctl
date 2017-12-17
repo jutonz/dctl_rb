@@ -5,9 +5,15 @@ require "thor"
 require "pty"
 require "rainbow"
 require "config"
+require "open3"
 
 module Dctl
   class Cli < Thor
+
+    ERROR_COLOR = :red
+    SUCCESS_COLOR = :green
+    CMD_COLOR = :dimgray
+
     class_option :env, default: "dev", type: :string
 
     desc "build", "Build images. Pass image name to build a specific one; otherwise builds all"
@@ -150,15 +156,44 @@ module Dctl
     end
 
     desc "cleanup", "cleans up dangling docker images"
+    option :keep, type: :numeric, default: -1, desc: "How many old images to keep around, e.g. \"3\" will keep the current version plus the three next most recent. Use -1 to keep all."
     def cleanup
-      dangling = `#{sudo}docker images --filter dangling=true -q`.split("\n")
+      to_remove = []
+      to_remove += `#{sudo}docker images --filter dangling=true -q`.split("\n")
 
-      if dangling.none?
-        puts "No images to cleanup. Yay!"
+      if options[:keep] != -1
+        keep_last = options[:keep]
+        dctl = Dctl::Main.new env: options[:env]
+        dctl.expand_images.each do |image|
+          current_version = dctl.current_version_for_image(image).to_i
+          keep_after_tag = current_version - keep_last
+
+          next if keep_after_tag < 0
+
+          cmd = "#{sudo}docker images #{dctl.image_tag(image, version: nil)} --filter before=#{dctl.image_tag(image, version: keep_after_tag)} -q"
+          puts Rainbow(cmd).fg CMD_COLOR
+          stdout, stderr, status = Open3.capture3(cmd)
+          if status.success?
+            to_remove += stdout.split("\n")
+          elsif stderr.include? "No such image"
+            # Specified before filter did not exist on current machine. Loop
+            # through all old images to manually reconstruct.
+            Array(0..keep_after_tag).each do |version|
+              cmd = "#{sudo}docker images #{dctl.image_tag(image, version: version)} -q"
+              puts Rainbow(cmd).fg CMD_COLOR
+              image_id = `#{cmd}`.strip
+              to_remove << image_id unless image_id.empty?
+            end
+          end
+        end
+      end
+
+      if to_remove.none?
+        puts Rainbow("No images to cleanup. Yay!").fg SUCCESS_COLOR
         exit 0
       end
 
-      stream_output "#{sudo}docker rmi -f #{dangling.join(" ")}", exec: true
+      stream_output "#{sudo}docker rmi -f #{to_remove.join(" ")}", exec: true
     end
 
     desc "bash CONTAINER", "Create a new instance of the given image with a bash prompt"
@@ -186,7 +221,7 @@ module Dctl
       container = `#{cmd}`.chomp
 
       if container.empty?
-        puts Rainbow("No running containers for image #{image}").red
+        puts Rainbow("No running containers for image #{image}").fg ERROR_COLOR
         exit 1
       end
 
@@ -200,7 +235,7 @@ module Dctl
 
     no_commands do
       def stream_output(string, print_command: true, exec: false)
-        puts string if print_command
+        puts Rainbow(string).fg(CMD_COLOR) if print_command
         if exec
           exec string
         else

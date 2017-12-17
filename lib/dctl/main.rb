@@ -11,13 +11,22 @@ module Dctl
     # Generate the full tag for the given image, concatenating the org,
     # project, env, image name, and version.
     #
+    # Pass `version: nil` to exclude the version portion.
+    #
     # @example
     #   image_tag("app") # => jutonz/dctl-dev-app:1
-    def image_tag(image, version: versions[image])
+    def image_tag(image, version: current_version_for_image(image))
       org       = settings.org
       project   = settings.project
 
-      "#{org}/#{project}-#{env}-#{image}:#{version}"
+      tag = "#{org}/#{project}-#{env}-#{image}"
+      tag += ":#{version}" if !version.nil?
+
+      tag
+    end
+
+    def current_version_for_image(image)
+      versions[image]
     end
 
     ##
