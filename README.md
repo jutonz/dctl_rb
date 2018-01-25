@@ -16,6 +16,7 @@ Each command relies on information in the `docker-compose.yaml` for the given en
 The default environment is `dev`, but you can override this with `--env prod` etc.
   * This just tells dctl where to look for your compose file--it doesn't actually do anything different. See [Installation](#Installation) for more info.
 
+Some commands:
 * `dctl up`
 * `dctl down`
 * `dctl build`
