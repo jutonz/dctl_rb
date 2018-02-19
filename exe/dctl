@@ -17,6 +17,7 @@ module Dctl
     class_option :env, default: "dev", type: :string
 
     desc "build", "Build images. Pass image name to build a specific one; otherwise builds all"
+    option :pull, type: :boolean, default: true
     def build(*images)
       dctl   = Dctl::Main.new env: options[:env]
       images = dctl.expand_images *images
@@ -28,8 +29,9 @@ module Dctl
       images.each do |image|
         tag = dctl.image_tag(image)
         dockerfile = dctl.image_dockerfile(image)
+        pull = options[:pull]
 
-        commands << "#{sudo}docker #{docker_opts} build -f #{dockerfile} -t #{tag} ."
+        commands << "#{sudo}docker #{docker_opts} build -f #{dockerfile} -t #{tag}#{pull ? " --pull=true" : ""} ."
       end
 
       stream_output commands.join(" && "), exec: true
