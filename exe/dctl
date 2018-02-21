@@ -257,6 +257,12 @@ module Dctl
       puts Dctl::VERSION
     end
 
+    desc "tag-for [IMAGE]", "Returns the full tag for the given image. Useful in CI."
+    def tag_for(image)
+      dctl = Dctl::Main.new env: options[:env]
+      puts dctl.image_tag(image)
+    end
+
     no_commands do
       def stream_output(string, print_command: true, exec: false)
         puts Rainbow(string).fg(CMD_COLOR) if print_command
