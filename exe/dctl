@@ -18,6 +18,7 @@ module Dctl
 
     desc "build", "Build images. Pass image name to build a specific one; otherwise builds all"
     option :pull, type: :boolean, default: true
+    option :cache_from, type: :string
     def build(*images)
       dctl   = Dctl::Main.new env: options[:env]
       images = dctl.expand_images *images
@@ -26,12 +27,26 @@ module Dctl
       puts "Generating build script for #{images.join(", ")}"
       commands = []
 
+
       images.each do |image|
         tag = dctl.image_tag(image)
         dockerfile = dctl.image_dockerfile(image)
-        pull = options[:pull]
+        build_opts = %W(
+          -f=#{dockerfile}
+          -t=#{tag}
+        )
+        build_opts << "--pull=true" if options[:pull]
+        if options[:cache_from]
+          if images.size > 1
+            error = "--cache-from is only supported when building a single " \
+             "image (you specified #{images.size}: #{images.join(", ")})"
+            puts Rainbow(error).fg ERROR_COLOR
+            exit 1
+          end
+          build_opts << "--cache-from=#{options[:cache_from]}"
+        end
 
-        commands << "#{sudo}docker #{docker_opts} build -f #{dockerfile} -t #{tag}#{pull ? " --pull=true" : ""} ."
+        commands << "#{sudo}docker #{docker_opts} build #{build_opts.join(" ")} ."
       end
 
       stream_output commands.join(" && "), exec: true
