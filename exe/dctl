@@ -9,7 +9,6 @@ require "open3"
 
 module Dctl
   class Cli < Thor
-
     ERROR_COLOR = :red
     SUCCESS_COLOR = :green
     CMD_COLOR = :dimgray
@@ -255,9 +254,9 @@ module Dctl
       end
 
       def sudo
+        return false if !ENV["DCTL_NOSUDO"].nil?
         `uname`.chomp == "Darwin" ? "" : "sudo " # use sudo on linux hosts
       end
-
 
       def docker_opts
         return "" unless ENV["JENKINS"]
