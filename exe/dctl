@@ -17,7 +17,7 @@ module Dctl
     class_option :host, type: :string
 
     desc "build", "Build images. Pass image name to build a specific one; otherwise builds all"
-    option :pull, type: :boolean, default: true
+    option :pull, type: :boolean, default: false
     option :cache_from, type: :string
     def build(*images)
       dctl   = Dctl::Main.new env: options[:env]
