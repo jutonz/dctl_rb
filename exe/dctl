@@ -14,6 +14,7 @@ module Dctl
     CMD_COLOR = :dimgray
 
     class_option :env, default: "dev", type: :string
+    class_option :host, type: :string
 
     desc "build", "Build images. Pass image name to build a specific one; otherwise builds all"
     option :pull, type: :boolean, default: true
@@ -44,7 +45,7 @@ module Dctl
 
       images.each do |image|
         tag = dctl.image_tag(image)
-        push_cmds << "#{sudo}docker push #{tag}"
+        push_cmds << "#{sudo}docker #{docker_opts} push #{tag}"
       end
 
       push_cmd = push_cmds.join " && "
@@ -59,7 +60,7 @@ module Dctl
 
       images.each do |image|
         tag = dctl.image_tag(image)
-        pull_cmds << "#{sudo}docker pull #{tag}"
+        pull_cmds << "#{sudo}docker #{docker_opts} pull #{tag}"
       end
 
       pull_cmd = pull_cmds.join " && "
@@ -74,13 +75,13 @@ module Dctl
       FileUtils.rm pidfile if File.exist? pidfile
 
       compose_opts = %w(--remove-orphans)
-      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} up #{compose_opts.join(" ")}", exec: true
+      stream_output "#{sudo}docker-compose #{docker_opts} -f #{dctl.compose_file_path} up #{compose_opts.join(" ")}", exec: true
     end
 
     desc "down", "Stop one or many containers"
     def down(*images)
       dctl = Dctl::Main.new env: options[:env]
-      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} down #{images.join(" ")}", exec: true
+      stream_output "#{sudo}docker-compose #{docker_opts} -f #{dctl.compose_file_path} down #{images.join(" ")}", exec: true
     end
 
     desc "rm", "Remove one or many containers"
@@ -88,44 +89,44 @@ module Dctl
     def rm(*images)
       dctl = Dctl::Main.new env: options[:env]
       opts = " --force" if options[:force]
-      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} rm#{opts} #{images.join(" ")}", exec: true
+      stream_output "#{sudo}docker-compose #{docker_opts} -f #{dctl.compose_file_path} rm#{opts} #{images.join(" ")}", exec: true
     end
 
     desc "start", "Start one or many containers"
     def start(*images)
       dctl = Dctl::Main.new env: options[:env]
-      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} start #{images.join(" ")}", exec: true
+      stream_output "#{sudo}docker-compose #{docker_opts} -f #{dctl.compose_file_path} start #{images.join(" ")}", exec: true
     end
 
     desc "stop", "Stop one or many containers"
     def stop(*images)
       dctl = Dctl::Main.new env: options[:env]
-      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} stop #{images.join(" ")}", exec: true
+      stream_output "#{sudo}docker-compose #{docker_opts} -f #{dctl.compose_file_path} stop #{images.join(" ")}", exec: true
     end
 
     desc "restart", "Restart one or many containers"
     def restart(*images)
       dctl = Dctl::Main.new env: options[:env]
-      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} restart #{images.join(" ")}", exec: true
+      stream_output "#{sudo}docker-compose #{docker_opts} -f #{dctl.compose_file_path} restart #{images.join(" ")}", exec: true
     end
 
     desc "create", "Bring an image up without starting it"
     def create(*images)
       dctl = Dctl::Main.new env: options[:env]
-      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} up --no-start #{images.join(" ")}", exec: true
+      stream_output "#{sudo}docker-compose #{docker_opts} -f #{dctl.compose_file_path} up --no-start #{images.join(" ")}", exec: true
     end
 
     desc "run [IMAGE] [COMMAND]", "Run a command on the given image"
     def runcmd(image, *commands)
       dctl = Dctl::Main.new env: options[:env]
-      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} run #{image} #{commands.join(" ")}", exec: true
+      stream_output "#{sudo}docker-compose #{docker_opts} -f #{dctl.compose_file_path} run #{image} #{commands.join(" ")}", exec: true
     end
 
     desc "exec [IMAGE] [COMMAND]", "Execute a command on the given _running_ image"
     map exec: :_exec # avoid overwriting Kernel#exec
     def _exec(image, *commands)
       dctl = Dctl::Main.new env: options[:env]
-      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} exec #{image} #{commands.join(" ")}", exec: true
+      stream_output "#{sudo}docker-compose #{docker_opts} -f #{dctl.compose_file_path} exec #{image} #{commands.join(" ")}", exec: true
     end
 
     desc "recreate", "Stop, remove, build, create, and start a container"
@@ -142,7 +143,7 @@ module Dctl
     desc "ps", "List running containers for this environment"
     def ps
       dctl = Dctl::Main.new env: options[:env]
-      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} ps", exec: true
+      stream_output "#{sudo}docker-compose #{docker_opts} -f #{dctl.compose_file_path} ps", exec: true
     end
 
     desc "release IMAGE", "Increase the version number for the given image"
@@ -158,7 +159,7 @@ module Dctl
       local_data_dir = File.expand_path "../tmp/psql-#{env}", __FILE__
       `#{sudo}rm -r #{local_data_dir}` if File.exists? local_data_dir # todo prompt
 
-      cmd = "#{sudo}docker-compose -f #{dctl.compose_file_path} run --rm psql /bin/bash -c /etc/initdb.sh"
+      cmd = "#{sudo}docker-compose #{docker_opts} -f #{dctl.compose_file_path} run --rm psql /bin/bash -c /etc/initdb.sh"
 
       stream_output cmd, exec: true
     end
@@ -178,7 +179,7 @@ module Dctl
 
           next if keep_after_tag < 0
 
-          cmd = "#{sudo}docker images #{dctl.image_tag(image, version: nil)} --filter before=#{dctl.image_tag(image, version: keep_after_tag)} -q"
+          cmd = "#{sudo}docker #{docker_opts} images #{dctl.image_tag(image, version: nil)} --filter before=#{dctl.image_tag(image, version: keep_after_tag)} -q"
           puts Rainbow(cmd).fg CMD_COLOR
           stdout, stderr, status = Open3.capture3(cmd)
           if status.success?
@@ -207,7 +208,7 @@ module Dctl
     desc "bash CONTAINER", "Create a new instance of the given image with a bash prompt"
     def bash(container = "app")
       dctl = Dctl::Main.new env: options[:env]
-      cmd = "#{sudo}docker-compose -f #{dctl.compose_file_path} run --rm #{container} /bin/bash"
+      cmd = "#{sudo}docker-compose #{docker_opts} -f #{dctl.compose_file_path} run --rm #{container} /bin/bash"
 
       stream_output cmd, exec: true
     end
@@ -215,7 +216,7 @@ module Dctl
     desc "connect CONTAINER", "Connect to a running container."
     def connect(image = "app")
       dctl = Dctl::Main.new env: options[:env]
-      stream_output "#{sudo}docker-compose -f #{dctl.compose_file_path} exec #{image} /bin/bash", exec: true
+      stream_output "#{sudo}docker-compose #{docker_opts} -f #{dctl.compose_file_path} exec #{image} /bin/bash", exec: true
     end
 
     desc "attach CONTAINER", "Connect to a running container."
@@ -224,7 +225,7 @@ module Dctl
       dctl = Dctl::Main.new env: options[:env]
       tag = dctl.image_tag(image)
 
-      cmd = "#{sudo}docker ps --filter ancestor=#{image} -aq | head -n1"
+      cmd = "#{sudo}docker #{docker_opts} ps --filter ancestor=#{image} -aq | head -n1"
       puts cmd
       container = `#{cmd}`.chomp
 
@@ -259,14 +260,15 @@ module Dctl
       end
 
       def docker_opts
-        return "" unless ENV["JENKINS"]
-        opts = "--tls"
+        opts = []
 
-        if host = ENV["DOCKER_HOST_IP"]
-          opts += " --host tcp://#{host}"
-        end
+        # Respect both DOCKER_HOST and --host, but prefer --host if both are
+        # present.
+        host = options[:host]
+        host ||= !ENV["DOCKER_HOST"].nil? ? ENV["DOCKER_HOST"] : nil
+        opts << "--host #{host}" if host
 
-        opts
+        opts.join " "
       end
     end
   end
