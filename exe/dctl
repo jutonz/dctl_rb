@@ -284,7 +284,7 @@ module Dctl
       end
 
       def sudo
-        return false if !ENV["DCTL_NOSUDO"].nil?
+        return "" if !ENV["DCTL_NOSUDO"].nil?
         `uname`.chomp == "Darwin" ? "" : "sudo " # use sudo on linux hosts
       end
 
