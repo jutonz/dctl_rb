@@ -266,9 +266,12 @@ module Dctl
     end
 
     desc "tag-for [IMAGE]", "Returns the full tag for the given image. Useful in CI."
+    option :version, type: :string, desc: "Override version. Defaults to the value in the compose file"
     def tag_for(image)
       dctl = Dctl::Main.new env: options[:env]
-      puts dctl.image_tag(image)
+      opts = {}
+      opts[:version] = options[:version] if options[:version]
+      puts dctl.image_tag(image, opts)
     end
 
     no_commands do
