@@ -76,13 +76,16 @@ module Dctl
     end
 
     desc "pull", "Pull the latest remote images to your local machine"
+    option :version, type: :string, desc: "Overrde version. Default is value in compose file"
     def pull(*images)
       dctl   = Dctl::Main.new env: options[:env]
       images = dctl.expand_images *images
       pull_cmds = []
 
       images.each do |image|
-        tag = dctl.image_tag(image)
+        opts = {}
+        opts[:version] = options[:version] if options[:version]
+        tag = dctl.image_tag(image, opts)
         pull_cmds << "#{sudo}docker #{docker_opts} pull #{tag}"
       end
 
