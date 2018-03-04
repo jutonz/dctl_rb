@@ -6,12 +6,16 @@ require "pty"
 require "rainbow"
 require "config"
 require "open3"
+require "dctl/cli/kubernetes"
 
 module Dctl
   class Cli < Thor
     ERROR_COLOR = :red
     SUCCESS_COLOR = :green
     CMD_COLOR = :dimgray
+
+    desc "k8s", "Manage a kubernetes cluster"
+    subcommand "k8s", Dctl::Kubernetes::Cli
 
     class_option :env, type: :string
     class_option :host, type: :string
