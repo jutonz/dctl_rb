@@ -65,7 +65,12 @@ module Dctl::Kubernetes
       # Transform Thor's HashWithIndifferentAccess to a regular hash so it can
       # be passed to methods and treated as named arguments.
       def dctl_opts
-        { env: options.fetch("env", "dev") }
+        { env: dctl_env }
+      end
+
+      # Support both --env and DCTL_ENV, but prefer --env if both are present
+      def dctl_env
+        options[:env] || ENV["DCTL_ENV"] || "dev"
       end
     end
   end
