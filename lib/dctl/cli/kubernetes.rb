@@ -36,10 +36,14 @@ module Dctl::Kubernetes
         \techo "app is up to date"\x5
         fi\x5
     LONGDESC
+    option :verbose, type: :boolean, default: false
     def is_outdated(service)
+      verbose = options[:verbose]
       dctl = Dctl::Main.new dctl_opts
       compose_tag = dctl.image_tag service
+      puts "Tag in compose file is #{compose_tag}" if verbose
       live_tag = Dctl::Kubernetes.live_image(service, k8s_opts)
+      puts "Deployed tag is #{live_tag}" if verbose
 
       is_outdated = compose_tag != live_tag
       if is_outdated
