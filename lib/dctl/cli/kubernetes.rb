@@ -40,7 +40,15 @@ module Dctl::Kubernetes
       dctl = Dctl::Main.new dctl_opts
       compose_tag = dctl.image_tag service
       live_tag = Dctl::Kubernetes.live_image(service, k8s_opts)
-      exit compose_tag == live_tag ? 1 : 0
+
+      is_outdated = compose_tag != live_tag
+      if is_outdated
+        puts "yes"
+        exit 0
+      else
+        puts "no"
+        exit 1
+      end
     end
 
     no_commands do
