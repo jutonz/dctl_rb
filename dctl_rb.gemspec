@@ -34,7 +34,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "byebug", "~> 9.1"
 
   spec.add_dependency "rake", "~> 12"
-  spec.add_dependency "thor", "~> 0.17", ">= 0.17.0"
+  spec.add_dependency "thor", "~> 0.20"
   spec.add_dependency "config", ">= 1", "< 2"
   spec.add_dependency "rainbow", ">= 2.2", "< 3"
 end
