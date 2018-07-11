@@ -51,7 +51,7 @@ module Dctl
       images
     end
 
-    def release(image)
+    def bump(image)
       check_image(image)
 
       parsed  = parsed_compose_file
