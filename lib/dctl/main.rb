@@ -155,7 +155,7 @@ module Dctl
     def define_custom_commands(klass)
       Array(settings.custom_commands).each do |command, args|
         klass.send(:desc, command, "[Custom Command] #{command}")
-        klass.define_method(command, -> do
+        klass.send(:define_method, command, -> do
           Array(args).each { |a| stream_output(a) }
         end)
       end
