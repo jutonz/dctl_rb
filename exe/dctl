@@ -348,4 +348,6 @@ module Dctl
   end
 end
 
+dctl = Dctl::Main.new
+dctl.define_custom_commands(Dctl::Cli)
 Dctl::Cli.start ARGV

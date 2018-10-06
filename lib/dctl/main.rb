@@ -2,9 +2,9 @@ module Dctl
   class Main
     attr_reader :env, :settings
 
-    def initialize(env: "dev")
+    def initialize(env: "dev", config: nil)
       @env = env
-      load_config!
+      load_config!(config)
     end
 
     ##
@@ -150,6 +150,18 @@ module Dctl
     end
 
     ##
+    # If there are user defined commands in .dctl.yml, dynamically add them to
+    # the passed thor CLI so they may be executed.
+    def define_custom_commands(klass)
+      Array(settings.custom_commands).each do |command, args|
+        klass.send(:desc, command, "[Custom Command] #{command}")
+        klass.send(:define_method, command, -> do
+          Array(args).each { |a| stream_output(a) }
+        end)
+      end
+    end
+
+    ##
     # Ensure the current project's .dctl.yml contains all the requisite keys.
     def check_settings!
       required_keys = %w(
@@ -171,8 +183,8 @@ module Dctl
     ##
     # Load the current project's config file, complaining if it does not exist
     # or is malformed.
-    def load_config!
-      Config.load_and_set_settings(config_path)
+    def load_config!(custom_config_path = nil)
+      Config.load_and_set_settings(custom_config_path || config_path)
       check_settings!
 
       @settings = Settings

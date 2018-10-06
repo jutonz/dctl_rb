@@ -127,7 +127,20 @@ docker
   * `project` (required)
 
 ### Optional keys
-  * none yet
+  * `custom_commands`
+    * This is basically a set of aliases you can add if you happen to be running the same commands again and again
+    
+    For instance, if initially creating your database requires two commands, you can add an alias to make it just one:
+    ```yaml
+    custom_commands:
+      migrate:
+      - dctl run --rm psql initdb
+      - dctl run --rm app mix ecto.setup
+    ```
+    
+    Now you can just run `dctl migrate` and it will run the commands in the order you specified.
+    
+    This just shells out, so you can also add any stuff you'd normally do in bash.
 
 ## Development
 
