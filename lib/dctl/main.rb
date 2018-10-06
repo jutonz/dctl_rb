@@ -155,8 +155,14 @@ module Dctl
     def define_custom_commands(klass)
       Array(settings.custom_commands).each do |command, args|
         klass.send(:desc, command, "[Custom Command] #{command}")
+
+        # Concat with string so we can use exec rather than executing multiple
+        # subshells. Exec allows us to reuse the shell in which dctl is being
+        # executed, so we get to do things like reuse sudo authorizations
+        # rather than always having to prmopt.
+        concatenated = Array(args).join(" && ").strip
         klass.send(:define_method, command, -> do
-          Array(args).each { |a| stream_output(a) }
+          stream_output(concatenated, exec: true)
         end)
       end
     end
