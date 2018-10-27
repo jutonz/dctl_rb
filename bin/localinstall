@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+yes | gem uninstall dctl_rb && rm -f *.gem;  gem build *.gemspec && gem install --local *.gem
