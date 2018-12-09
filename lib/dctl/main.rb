@@ -20,7 +20,15 @@ module Dctl
       project   = settings.project
 
       tag = "#{org}/#{project}-#{env}-#{image}"
-      tag += ":#{version}" if !version.nil?
+      if !version.nil?
+        tag +=
+          if version.negative?
+            current_version = current_version_for_image(image)
+            ":#{current_version + version}"
+          else
+            ":#{version}"
+          end
+      end
 
       tag
     end

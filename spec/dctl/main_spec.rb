@@ -40,6 +40,44 @@ RSpec.describe Dctl::Main do
       end
     end
   end
+
+  describe "#image_tag" do
+    it "returns a tag" do
+      config = <<~CONFIG
+        org: jutonz
+        project: dctl_rb
+      CONFIG
+
+      with_config(config) do |config_path|
+        dctl = Dctl::Main.new(config: config_path)
+        service = "app"
+
+        expect(dctl).to receive(:current_version_for_image).with(service)
+          .and_return(10)
+
+        expect(dctl.image_tag(service)).to eq "jutonz/dctl_rb-dev-app:10"
+      end
+    end
+
+    it "allows specifying negative version numbers" do
+      config = <<~CONFIG
+        org: jutonz
+        project: dctl_rb
+      CONFIG
+
+      with_config(config) do |config_path|
+        dctl = Dctl::Main.new(config: config_path)
+        service = "app"
+
+        expect(dctl).to receive(:current_version_for_image).with(service)
+          .and_return(10)
+
+        expect(dctl.image_tag(service, version: -1)).to eq(
+          "jutonz/dctl_rb-dev-app:9"
+        )
+      end
+    end
+  end
 end
 
 def with_config(config_str, &block)
