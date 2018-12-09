@@ -79,7 +79,7 @@ PLATFORMS
 
 DEPENDENCIES
   bundler (~> 1.16)
-  byebug (~> 9.1)
+  byebug (>= 9, < 11)
   dctl_rb!
   rspec (~> 3.0)
 
