@@ -25,7 +25,7 @@ module Dctl
         tag +=
           if version.negative?
             current_version = current_version_for_image(image)
-            ":#{current_version + version}"
+            ":#{current_version.to_i + version}"
           else
             ":#{version}"
           end
