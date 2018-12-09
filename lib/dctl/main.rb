@@ -21,6 +21,7 @@ module Dctl
 
       tag = "#{org}/#{project}-#{env}-#{image}"
       if !version.nil?
+        version = version.to_i
         tag +=
           if version.negative?
             current_version = current_version_for_image(image)

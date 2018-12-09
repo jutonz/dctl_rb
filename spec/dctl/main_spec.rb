@@ -77,6 +77,25 @@ RSpec.describe Dctl::Main do
         )
       end
     end
+
+    it "doesn't mind if version numbers are strings" do
+      config = <<~CONFIG
+        org: jutonz
+        project: dctl_rb
+      CONFIG
+
+      with_config(config) do |config_path|
+        dctl = Dctl::Main.new(config: config_path)
+        service = "app"
+
+        expect(dctl).to receive(:current_version_for_image).with(service)
+          .and_return(10)
+
+        expect(dctl.image_tag(service, version: "-1")).to eq(
+          "jutonz/dctl_rb-dev-app:9"
+        )
+      end
+    end
   end
 end
 
